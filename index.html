@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Supply Waveform Tools</title>
+    <style>
+        /* 1. 定義顏色變數 (Light Mode 預設值) */
+        :root {
+            --bg-body: #f0f2f5;
+            --bg-container: #ffffff;
+            --text-heading: #2c3e50;
+            --text-footer: #888888;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+
+        /* 2. 定義暗黑模式變數 (Dark Mode Overrides) */
+        body.dark-mode {
+            --bg-body: #121212;
+            --bg-container: #1e1e1e;
+            --text-heading: #ffffff;
+            --text-footer: #aaaaaa;
+            --shadow-color: rgba(0,0,0,0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s;
+            position: relative; /* For toggle button positioning */
+        }
+
+        .container {
+            text-align: center;
+            background: var(--bg-container);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            max-width: 400px;
+            width: 90%; /* Responsive fix */
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        h1 { 
+            color: var(--text-heading); 
+            margin-bottom: 30px; 
+            font-size: 24px; 
+            font-weight: 600;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px 0;
+            margin: 15px 0;
+            text-decoration: none;
+            color: white;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: opacity 0.2s, transform 0.1s;
+            box-sizing: border-box;
+            font-weight: 500;
+        }
+        
+        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-chroma { background-color: #dc3545; } /* Red */
+        .btn-psw { background-color: #007bff; }    /* Blue */
+        
+        .footer { 
+            margin-top: 25px; 
+            font-size: 13px; 
+            color: var(--text-footer); 
+        }
+
+        /* Theme Toggle Button Style */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: 1px solid var(--text-footer);
+            color: var(--text-heading);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .theme-toggle:hover {
+            background-color: var(--shadow-color);
+        }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌗 Theme</button>
+
+    <div class="container">
+        <h1>Waveform Viewer Portal</h1>
+        
+        <a href="_chroma.html" class="btn btn-chroma">
+            Open Chroma 62000P Viewer
+        </a>
+
+        <a href="_gw_psw.html" class="btn btn-psw">
+            Open GW Instek PSW Viewer
+        </a>
+
+        <div class="footer">ISO-16750 Waveform Tools</div>
+    </div>
+
+    <script>
+        // 檢查使用者之前的設定
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            
+            // 儲存設定到 LocalStorage
+            let theme = 'light';
+            if (document.body.classList.contains('dark-mode')) {
+                theme = 'dark';
+            }
+            localStorage.setItem('theme', theme);
+        }
+    </script>
+
+</body>
+</html>

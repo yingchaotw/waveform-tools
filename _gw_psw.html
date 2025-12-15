@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GW Instek PSW - CSV Waveform Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --bg-body: #f4f4f9;
+            --bg-container: #ffffff;
+            --bg-controls: #e9ecef;
+            --text-main: #333333;
+            --text-heading: #2c3e50;
+            --text-muted: #666666;
+            --border-color: #ddd;
+            --chart-grid: #e5e5e5;
+            --chart-text: #666;
+        }
+
+        body.dark-mode {
+            --bg-body: #121212;
+            --bg-container: #1e1e1e;
+            --bg-controls: #2c2c2c;
+            --text-main: #e0e0e0;
+            --text-heading: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #444;
+            --chart-grid: #444;
+            --chart-text: #aaa;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: var(--bg-body); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: background-color 0.3s; }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h2 { margin: 0; color: var(--text-heading); }
+        
+        .controls { margin-bottom: 20px; padding: 15px; background: var(--bg-controls); border-radius: 5px; border: 1px solid var(--border-color); transition: background-color 0.3s; }
+        .control-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .file-info { margin-top: 10px; font-size: 0.9em; color: var(--text-muted); white-space: pre-wrap; font-family: monospace; max-height: 100px; overflow-y: auto;}
+        canvas { max-height: 500px; }
+        .instructions { font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px; }
+        
+        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: 500; transition: 0.2s; }
+        .btn-upload { background: #28a745; color: white; } /* Green */
+        .btn-upload:hover { background: #218838; }
+        .btn-reset { background: #6c757d; color: white; } /* Gray */
+        .btn-reset:hover { background: #5a6268; }
+        .btn-theme { background: #343a40; color: white; border: 1px solid #555; } /* Dark */
+        .btn-theme:hover { background: #23272b; }
+
+        .note { font-size: 0.8em; color: var(--text-muted); margin-top: 5px; font-style: italic; }
+        
+        /* Dark mode file input fix */
+        body.dark-mode input[type="file"] { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-row">
+        <h2>GW Instek PSW - CSV Viewer</h2>
+        <button class="btn-theme" onclick="toggleTheme()">🌗 Theme</button>
+    </div>
+    
+    <p class="instructions">Upload a GW Instek PSW format CSV file (starts with 'Step' header).</p>
+    
+    <div class="controls">
+        <div class="control-group">
+            <input type="file" id="fileInput" accept=".csv,.txt" />
+            <button class="btn-reset" onclick="resetZoom()">🔍 Reset Zoom</button>
+        </div>
+        <div id="fileInfo" class="file-info">Waiting for file...</div>
+        <div class="note">* Visualizes Voltage vs Time. Assumes vertical transitions (infinite slew rate) for preview.</div>
+    </div>
+
+    <canvas id="waveChart"></canvas>
+</div>
+
+<script>
+    let myChart = null;
+
+    // --- Theme Logic ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        updateChartTheme();
+    }
+
+    function updateChartTheme() {
+        if (!myChart) return;
+        
+        const isDark = document.body.classList.contains('dark-mode');
+        const gridColor = isDark ? '#444' : '#e5e5e5';
+        const textColor = isDark ? '#aaa' : '#666';
+        
+        myChart.options.scales.x.grid.color = gridColor;
+        myChart.options.scales.y.grid.color = gridColor;
+        myChart.options.scales.x.ticks.color = textColor;
+        myChart.options.scales.y.ticks.color = textColor;
+        myChart.options.scales.x.title.color = textColor;
+        myChart.options.scales.y.title.color = textColor;
+        myChart.update();
+    }
+
+    // --- File Reading ---
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            try {
+                const result = parsePswCsv(content);
+                drawChart(result.points);
+                document.getElementById('fileInfo').innerText = `Success: Loaded ${result.count} steps.\nFile type detected: GW Instek PSW`;
+            } catch (err) {
+                alert("Parsing Error: " + err.message);
+                console.error(err);
+                document.getElementById('fileInfo').innerText = "Error: " + err.message;
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    // --- Parser Logic for GW Instek PSW ---
+    function parsePswCsv(text) {
+        const lines = text.split(/\r?\n/);
+        let points = [];
+        let t = 0;
+        let headerFound = false;
+        let colMap = { time: -1, volt: -1 };
+        let count = 0;
+
+        // Start point
+        points.push({x: 0, y: 0});
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+
+            const parts = line.split(',');
+
+            // 1. Find Header
+            if (!headerFound) {
+                if (parts[0].toLowerCase() === 'step') {
+                    headerFound = true;
+                    // Dynamic column mapping
+                    parts.forEach((col, index) => {
+                        const c = col.toLowerCase();
+                        if (c.includes('time') && c.includes('sec')) colMap.time = index;
+                        if (c.includes('voltage') && c.includes('v')) colMap.volt = index;
+                    });
+
+                    if (colMap.time === -1 || colMap.volt === -1) {
+                        throw new Error("Could not find 'Time(sec)' or 'Voltage(V)' columns in header row.");
+                    }
+                }
+                continue;
+            }
+
+            // 2. Parse Data Rows
+            // Check if it's a data row (first column should be a number)
+            if (isNaN(parseFloat(parts[0]))) continue;
+
+            const timeStr = parts[colMap.time];
+            const voltStr = parts[colMap.volt];
+            
+            if (timeStr === undefined || voltStr === undefined) continue;
+
+            const duration = parseFloat(timeStr);
+            const volt = parseFloat(voltStr);
+
+            if (!isNaN(duration) && !isNaN(volt)) {
+                // PSW Logic:
+                // Step starts -> Jump to V -> Hold for Duration
+                
+                // 1. Vertical Transition (Jump)
+                points.push({x: t, y: volt});
+                
+                // 2. Hold
+                t += duration;
+                points.push({x: t, y: volt});
+                
+                count++;
+            }
+        }
+
+        if (!headerFound) {
+            throw new Error("Invalid Format: Could not find 'Step' header row.");
+        }
+
+        return { points, count };
+    }
+
+    // --- Chart Logic ---
+    function drawChart(dataPoints) {
+        const ctx = document.getElementById('waveChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        const isDark = document.body.classList.contains('dark-mode');
+        const gridColor = isDark ? '#444' : '#e5e5e5';
+        const textColor = isDark ? '#aaa' : '#666';
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Voltage (V)',
+                    data: dataPoints,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0, 
+                    fill: true,
+                    tension: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: { 
+                        type: 'linear', 
+                        title: { display: true, text: 'Time (s)', color: textColor },
+                        grid: { color: gridColor },
+                        ticks: { 
+                            color: textColor,
+                            callback: function(value) { return value + 's'; } 
+                        }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Voltage (V)', color: textColor },
+                        grid: { color: gridColor },
+                        ticks: { color: textColor },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    zoom: {
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+                        pan: { enabled: true, mode: 'x' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return `Voltage: ${context.parsed.y} V`; },
+                            title: function(context) { return `Time: ${context[0].parsed.x.toFixed(2)} s`; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function resetZoom() {
+        if(myChart) myChart.resetZoom();
+    }
+</script>
+
+</body>
+</html>
