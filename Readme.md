@@ -1,53 +1,70 @@
-# Chroma 62000P Waveform Editor (Web-based)
+# Power Supply Waveform Tools (Web-based)
 
-A lightweight, web-based waveform editor designed for the **Chroma 62000P Series** DC Power Supplies. 
-This tool allows engineers to visualize, edit, and generate SCPI sequence files (CSV) directly in the browser, without installing any proprietary software. It is particularly useful for creating automotive test profiles (e.g., ISO-16750-2 starting profiles).
+A unified, lightweight web-based toolkit designed to visualize and edit test scripts for DC Power Supplies. 
+This project currently supports **Chroma 62000P** (SCPI Sequence) and **GW Instek PSW** (CSV) formats, enabling engineers to verify automotive test profiles (e.g., ISO-16750-2 starting profiles) directly in the browser without installing proprietary software.
 
-[**🇨🇳 中文說明 (Chinese Readme)**](./Readme_zh.md)
+[**🇨🇳 中文說明 (Chinese Readme)**](./README_zh.md)
 
-## ✨ Features
-- **Visual Editor**: Real-time voltage/time plotting with zoom and pan capabilities.
-- **SCPI Parsing**: Reads and parses standard Chroma SCPI `.csv` sequence files (Program/Sequence format).
-- **Full Parameter Control**:
-  - Edit **Voltage**, **Duration**, and **Slew Rate** (V/ms).
-  - Configure **Program Linking** and **Loop Counts** for complex testing cycles.
-  - Support for **TTL** triggers.
-- **One-Click Export**: Generates compliant CSV files ready for import into the Chroma 62000P SoftPanel.
-- **Client-Side Only**: Runs entirely in your browser. No data is uploaded to any server.
+## 🚀 Live Demo
+**[Click here to open the Tool Portal](https://yingchaotw.github.io/waveform-tools/)**
 
-## 🚀 Live Demo & Usage
-**[Click here to open the Editor](https://<YOUR-USERNAME>.github.io/<YOUR-REPO-NAME>/)**
+---
 
-### How to Use
-1. **Load File**: Click **"Choose File"** to load an existing `*_W_mem.csv` file, or click **"+ New Prog"** to start from scratch.
-2. **Edit**: 
-   - Use the left sidebar to add/remove Programs or Sequences.
-   - Adjust Voltage, Time, and Slew Rate.
-   - The chart on the right updates instantly to reflect your changes.
-3. **Inspect**: Hover over the chart to see precise values. Use the scroll wheel to zoom in on transient edges.
-4. **Export**: Click **"💾 Save CSV"** to download the modified file.
-5. **Run**: Import the CSV into your Chroma SoftPanel to execute the test.
+## ✨ Included Tools
 
-## 🛠️ Technology Stack
-- **HTML5 / JavaScript (ES6)**: Core logic and UI.
-- **[Chart.js](https://www.chartjs.org/)**: Rendering the interactive waveform.
-- **[chartjs-plugin-zoom](https://www.chartjs.org/chartjs-plugin-zoom/)**: Enabling zoom and pan interactions.
+### 1. Chroma 62000P Editor
+A full-featured **Waveform Editor** for Chroma 62000P Series (List Mode / Sequence).
+- **Features**: 
+  - Visual editing of Voltage, Time, and Slew Rate (V/ms).
+  - Supports Program Linking (`PROG:LINK`) and Loop Counts (`PROG:COUNT`).
+  - Real-time chart updates.
+  - **Export**: Generates valid `_W_mem.csv` files for import into Chroma SoftPanel.
 
-## 📝 File Format Support
-This tool supports the Chroma 62000P **List Mode / Sequence** CSV format, typically structured as:
+### 2. GW Instek PSW Viewer
+A **Waveform Previewer** for GW Instek PSW Series.
+- **Features**:
+  - Parses PSW-formatted CSV files (`.csv`).
+  - Intelligent header detection (automatically skips memo lines).
+  - Visualizes Step-based voltage transitions.
+  - **Note**: This tool currently serves as a viewer to verify waveform shapes before testing.
+
+---
+
+## 📝 Supported File Formats
+
+### Chroma 62000P (SCPI Sequence)
+The editor expects (and generates) standard SCPI command lists:
 ```csv
+CONF:REM ON
 PROG:SEL 1
 PROG:COUNT 1
-PROG:LINK 2
+PROG:LINK 0
 PROG:SEQ:VOLT 12.0
 PROG:SEQ:VOLT:SLEW 10
 PROG:SEQ:TIME 0.5
 ...
 
-##⚠️ DisclaimerThis project is an open-source utility developed by the community and is **not affiliated with, endorsed by, or connected to Chroma ATE Inc.** Please ensure all waveforms are verified before running high-voltage/high-current tests on actual hardware.
+```
+
+###GW Instek PSW (CSV)The viewer looks for the `Step` header row and automatically detects `Time(sec)` and `Voltage (V)` columns.
+
+```csv
+memo,Sequence Example...
+Cycle,1,1,7
+...
+Step,Point,Output,Time(sec),Voltage (V),Current (A)...
+1,Start,On,10,14,MAX...
+2,,On,8439,0,MAX...
+
+```
 
 ---
 
-**License**: MIT
+##🛠️ Technology Stack* **Core**: HTML5, JavaScript (ES6)
+* **Visualization**: [Chart.js](https://www.chartjs.org/)
+* **Interaction**: [chartjs-plugin-zoom](https://www.chartjs.org/chartjs-plugin-zoom/)
+* **Styling**: CSS Variables (Dark Mode support)
 
-<!-- https://www.gwinstek.com/zh-TW/products/downloadSeriesDownNew/6625/1331 -->
+##⚠️ DisclaimerThis project is an open-source utility developed by the community and is **not affiliated with, endorsed by, or connected to Chroma ATE Inc. or GW Instek (Good Will Instrument Co., Ltd).** Please ensure all waveforms are verified before running high-voltage/high-current tests on actual hardware.
+
+License [MIT](LICENSE)

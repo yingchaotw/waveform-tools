@@ -5,36 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Power Supply Waveform Tools</title>
     <style>
-        /* 1. 定義顏色變數 (Light Mode 預設值) */
+        /* 1. Light Mode Variables */
         :root {
             --bg-body: #f0f2f5;
             --bg-container: #ffffff;
             --text-heading: #2c3e50;
+            --text-body: #333333;
+            --text-muted: #666666;
             --text-footer: #888888;
             --shadow-color: rgba(0,0,0,0.1);
+            --code-bg: #f8f9fa;
+            --border-color: #ddd;
         }
 
-        /* 2. 定義暗黑模式變數 (Dark Mode Overrides) */
+        /* 2. Dark Mode Variables */
         body.dark-mode {
             --bg-body: #121212;
             --bg-container: #1e1e1e;
             --text-heading: #ffffff;
+            --text-body: #e0e0e0;
+            --text-muted: #aaaaaa;
             --text-footer: #aaaaaa;
             --shadow-color: rgba(0,0,0,0.5);
+            --code-bg: #2c2c2c;
+            --border-color: #444;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-body);
+            color: var(--text-body);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            transition: background-color 0.3s;
-            position: relative; /* For toggle button positioning */
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+            position: relative;
         }
 
+        /* Main Card */
         .container {
             text-align: center;
             background: var(--bg-container);
@@ -42,7 +53,22 @@
             border-radius: 10px;
             box-shadow: 0 4px 15px var(--shadow-color);
             max-width: 400px;
-            width: 90%; /* Responsive fix */
+            width: 100%;
+            margin-top: 40px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Readme Section */
+        .readme-container {
+            background: var(--bg-container);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            max-width: 800px;
+            width: 100%;
+            margin-top: 30px;
+            margin-bottom: 40px;
+            text-align: left;
             transition: background-color 0.3s, box-shadow 0.3s;
         }
 
@@ -52,6 +78,11 @@
             font-size: 24px; 
             font-weight: 600;
         }
+
+        h2, h3 { color: var(--text-heading); margin-top: 25px; }
+        p, li { line-height: 1.6; color: var(--text-body); }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
 
         .btn {
             display: block;
@@ -70,8 +101,8 @@
         .btn:hover { opacity: 0.9; }
         .btn:active { transform: scale(0.98); }
 
-        .btn-chroma { background-color: #dc3545; } /* Red */
-        .btn-psw { background-color: #007bff; }    /* Blue */
+        .btn-chroma { background-color: #dc3545; } 
+        .btn-psw { background-color: #007bff; } 
         
         .footer { 
             margin-top: 25px; 
@@ -79,7 +110,7 @@
             color: var(--text-footer); 
         }
 
-        /* Theme Toggle Button Style */
+        /* Theme Toggle */
         .theme-toggle {
             position: absolute;
             top: 20px;
@@ -93,11 +124,36 @@
             font-size: 14px;
             transition: 0.3s;
         }
-        .theme-toggle:hover {
-            background-color: var(--shadow-color);
+        .theme-toggle:hover { background-color: var(--shadow-color); }
+
+        /* Code Block Style */
+        pre {
+            background: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            color: var(--text-body);
         }
+        code { font-family: monospace; }
+        
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 30px 0; }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: white;
+            vertical-align: text-bottom;
+            margin-left: 5px;
+        }
+        .bg-chroma { background-color: #dc3545; }
+        .bg-gw { background-color: #007bff; }
     </style>
 </head>
+
 <body>
 
     <button class="theme-toggle" onclick="toggleTheme()">🌗 Theme</button>
@@ -105,19 +161,71 @@
     <div class="container">
         <h1>Waveform Viewer Portal</h1>
         
-        <a href="_chroma.html" class="btn btn-chroma">
+        <a href="waveform_preview_chroma.html" class="btn btn-chroma">
             Open Chroma 62000P Viewer
         </a>
 
-        <a href="_gw_psw.html" class="btn btn-psw">
+        <a href="waveform_preview_gw_psw.html" class="btn btn-psw">
             Open GW Instek PSW Viewer
         </a>
 
         <div class="footer">ISO-16750 Waveform Tools</div>
     </div>
 
+    <div class="readme-container">
+        <h1>Power Supply Waveform Tools</h1>
+        <p>A unified web-based toolkit designed to visualize and edit test scripts for DC Power Supplies. 
+        This project supports both <strong>Chroma 62000P</strong> (SCPI Sequence) and <strong>GW Instek PSW</strong> (CSV) formats, enabling engineers to verify automotive test profiles (e.g., ISO-16750-2) directly in the browser.</p>
+
+        <hr>
+
+        <h2>✨ Features by Device</h2>
+        
+        <h3>🔴 Chroma 62000P <span class="badge bg-chroma">Editor</span></h3>
+        <ul>
+            <li><strong>Visual Editor</strong>: Edit Voltage, Duration, and Slew Rate (V/ms) interactively.</li>
+            <li><strong>SCPI Parsing</strong>: Supports standard <code>_W_mem.csv</code> SCPI sequence files.</li>
+            <li><strong>Advanced Logic</strong>: Visualizes Program Linking and Loop Counts.</li>
+            <li><strong>Export</strong>: Generates SoftPanel-compatible CSV files.</li>
+        </ul>
+
+        <h3>🔵 GW Instek PSW <span class="badge bg-gw">Viewer</span></h3>
+        <ul>
+            <li><strong>CSV Preview</strong>: Visualizes PSW formatted CSV files (Step/Voltage/Current/Time).</li>
+            <li><strong>Intelligent Parsing</strong>: Automatically skips memo headers and detects data columns.</li>
+            <li><strong>Preview Only</strong>: Checks waveform shapes before loading them into the instrument via USB/LAN.</li>
+        </ul>
+
+        <hr>
+
+        <h2>📝 Supported File Formats</h2>
+        
+        <h3>1. Chroma 62000P (SCPI List)</h3>
+        <pre><code>PROG:SEL 1
+PROG:COUNT 1
+PROG:LINK 2
+PROG:SEQ:VOLT 12.0
+PROG:SEQ:VOLT:SLEW 10
+PROG:SEQ:TIME 0.5</code></pre>
+
+        <h3>2. GW Instek PSW (CSV)</h3>
+        <p>The tool looks for the <code>Step</code> header row.</p>
+        <pre><code>memo,Sequence Example...
+Cycle,1,1,7
+Step,Point,Output,Time(sec),Voltage (V),Current (A)...
+1,Start,On,10,14,MAX...
+2,,On,8439,0,MAX...</code></pre>
+
+        <hr>
+
+        <h2>⚠️ Disclaimer</h2>
+        <p>This project is an open-source utility developed by the community and is <strong>not affiliated with, endorsed by, or connected to Chroma ATE Inc. or GW Instek (Good Will Instrument Co., Ltd).</strong> Please ensure all waveforms are verified before running high-voltage/high-current tests on actual hardware.</p>
+        
+        <p><strong>License</strong>: <a href="LICENSE">MIT</a></p>
+    </div>
+
     <script>
-        // 檢查使用者之前的設定
+        // Check local storage for theme
         const currentTheme = localStorage.getItem('theme');
         if (currentTheme === 'dark') {
             document.body.classList.add('dark-mode');
@@ -126,7 +234,7 @@
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
             
-            // 儲存設定到 LocalStorage
+            // Save preference
             let theme = 'light';
             if (document.body.classList.contains('dark-mode')) {
                 theme = 'dark';

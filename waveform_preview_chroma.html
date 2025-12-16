@@ -75,7 +75,6 @@
         label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 2px;}
         .file-input-wrapper { width: 100%; margin-bottom: 5px;}
         
-        /* Dark Mode File Input Fix */
         body.dark-mode input[type="file"] { color: var(--text-muted); }
 
         /* Modal Styles */
@@ -126,8 +125,8 @@
                 <h3>📌 How to Use</h3>
                 <ul>
                     <li><b>Load File:</b> Upload a Chroma CSV file (e.g., <code>*_W_mem.csv</code>).</li>
-                    <li><b>Theme:</b> Click <span class="help-key">🌗 Theme</span> to toggle Dark Mode.</li>
                     <li><b>New Program:</b> Click <span class="help-key">+ New Prog</span> to start from scratch.</li>
+                    <li><b>Theme:</b> Click <span class="help-key">🌗 Theme</span> to toggle Dark Mode.</li>
                 </ul>
 
                 <h3>⚡ Parameters Explained</h3>
@@ -138,13 +137,6 @@
                     <li><span class="help-key">Link Next (ID)</span>: ID of the NEXT Program (0 to stop).</li>
                     <li><span class="help-key">Loop Count</span>: Repeat count for this program.</li>
                 </ul>
-
-                <h3>🖱️ Chart Controls</h3>
-                <ul>
-                    <li><b>Zoom:</b> Mouse Scroll Wheel.</li>
-                    <li><b>Pan:</b> Drag chart left/right.</li>
-                    <li><b>Inspect:</b> Hover to see values.</li>
-                </ul>
             </div>
         </div>
     </div>
@@ -154,22 +146,35 @@
     let globalPrograms = {}; 
 
     // --- Theme Logic ---
+    // Check LocalStorage for theme preference from index page
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
-        // Update Chart colors dynamically
-        if (myChart) {
-            const isDark = document.body.classList.contains('dark-mode');
-            const gridColor = isDark ? '#444' : '#e5e5e5';
-            const textColor = isDark ? '#aaa' : '#666';
-            
-            myChart.options.scales.x.grid.color = gridColor;
-            myChart.options.scales.y.grid.color = gridColor;
-            myChart.options.scales.x.ticks.color = textColor;
-            myChart.options.scales.y.ticks.color = textColor;
-            myChart.options.scales.x.title.color = textColor;
-            myChart.options.scales.y.title.color = textColor;
-            myChart.update();
-        }
+        updateChartTheme();
+        
+        // Save preference
+        let theme = 'light';
+        if (document.body.classList.contains('dark-mode')) theme = 'dark';
+        localStorage.setItem('theme', theme);
+    }
+
+    function updateChartTheme() {
+        if (!myChart) return;
+        const isDark = document.body.classList.contains('dark-mode');
+        const gridColor = isDark ? '#444' : '#e5e5e5';
+        const textColor = isDark ? '#aaa' : '#666';
+        
+        myChart.options.scales.x.grid.color = gridColor;
+        myChart.options.scales.y.grid.color = gridColor;
+        myChart.options.scales.x.ticks.color = textColor;
+        myChart.options.scales.y.ticks.color = textColor;
+        myChart.options.scales.x.title.color = textColor;
+        myChart.options.scales.y.title.color = textColor;
+        myChart.update();
     }
 
     // --- Modal Logic ---
